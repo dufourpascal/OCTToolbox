@@ -55,6 +55,7 @@ classdef OCTViewer < handle
       obj.oct = oct;
       
       if nargin > 2
+        
         obj.showBScan(currentBScan)
       else
         obj.setBScan(1)
@@ -82,8 +83,7 @@ classdef OCTViewer < handle
         
         imagesc([1 imgDim(2)], [1 imgDim(1)*aspectYX], img, 'Parent', obj.Axis)
         
-%         axis(obj.Axis, 'off');
-      
+        axis(obj.Axis, 'off');
         set(obj.TestLabel, 'String', ['BScan: ', num2str(bScanIndex)]);
         
         obj.currentBScan = bScanIndex;

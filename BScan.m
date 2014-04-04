@@ -8,7 +8,7 @@ classdef BScan
     image;
     quality;
     nAveraged;
-    spacing; %[x y] pixel spacing
+    spacing; %[y x] pixel spacing
     acquisitionDate %acquisition date and time in datenum format
   end
   

@@ -41,12 +41,27 @@ classdef OCTScan
     end
     
     
-    function volumeMatrix = getRawVolume(oct)
-      %returns the OCT data as a 3d volume
+    function volumeMatrix = getRawVolume(oct, type)
+      %Returns the OCT data as a 3d volume
+      %type can be 'double' (default) or 'uint8'
       octDim = getDimensions(oct);
-      volumeMatrix = zeros(octDim);
+      
+      if nargin < 2
+        type = 'double';
+      end
+      
+      if ~strcmp(type,'double') && ~strcmp(type, 'uint8')
+        warning(['Cannot handle pixel type ', type, ', reverting to type double']);
+      end
+      
+      volumeMatrix = zeros(octDim, type);
       for b = 1:octDim(1)
-        volumeMatrix(b,:,:) = oct.bScans{b}.image;
+        if strcmp(type, 'double')
+          volumeMatrix(b,:,:) = im2double(oct.bScans{b}.image);
+        elseif strcmp(type,'uint8')
+          volumeMatrix(b,:,:) = oct.bScans{b}.image;
+        end
+          
       end
     end
     

@@ -54,9 +54,17 @@ classdef OCTViewer < handle
     function setOCT(obj, oct, currentBScan)
       obj.oct = oct;
       
+      octDim = obj.oct.getDimensions();
+      sliderStep = octDim(1)-1;
+      if sliderStep > 0
+        set(obj.Slider, 'Max', octDim(1), 'Min', 1, 'Enable', 'on', ...
+                      'SliderStep', [1/sliderStep 0.05]);
+      else
+        set(obj.Slider, 'Max', octDim(1), 'Min', 1, 'Enable', 'off');
+      end
+      
       if nargin > 2
-        
-        obj.showBScan(currentBScan)
+        obj.setBScan(currentBScan)
       else
         obj.setBScan(1)
       end
@@ -72,7 +80,6 @@ classdef OCTViewer < handle
       octDim = obj.oct.getDimensions();
       if octDim(1) >= bScanIndex
 %         disp('displaying bscan');
-
         
         bScan = obj.oct.bScans{bScanIndex};
         spacing = bScan.spacing;
@@ -98,6 +105,10 @@ classdef OCTViewer < handle
     function resize(obj)
 %       disp('resizing OCTViewer');
       
+    if isempty(obj.oct)
+      disp('no oct set');
+      return
+    end
       position = getpixelposition(obj.ParentPanel);
 %       position = position + [ 0 50 -6 -18 ];
       

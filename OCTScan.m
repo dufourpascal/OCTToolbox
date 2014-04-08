@@ -15,6 +15,7 @@ classdef OCTScan
     localizer; %Localizer object
     laterality;
     examDate;
+    oopSpacing
   end
   
   methods
@@ -23,8 +24,10 @@ classdef OCTScan
       if nargin > 0
         obj.patientName = patientName;
       else
-        obj.patientName = 'Not Initialized';
+        obj.patientName = 'No Name';
       end
+      
+      obj.oopSpacing = 0.114;
     end
     
     
@@ -37,6 +40,62 @@ classdef OCTScan
         img = oct.bScans{1}.image;
         dimYX = size(img);
         dim = [dimZ dimYX ];
+      end
+    end
+    
+    
+    function spacing = getSpacing(oct)
+      spacingBscan = oct.bScans{1}.spacing;
+      spacing = [oct.oopSpacing, spacingBscan(1), spacingBscan(2)]
+    end
+    
+    
+    function slice = getRawSlice(oct, plane, index, type)
+      %Returns a single 2d slice
+      %   index is the slice number
+      %   plane can be 'inplane' (BScan), 'outofplane' or 'enface'
+      %   type can be 'double' (default) or 'uint8'
+            
+      if ~strcmp(type,'double') && ~strcmp(type, 'uint8')
+        warning(['Cannot handle pixel type ', type, ', reverting to type double']);
+      end
+      dim = oct.getDimensions();
+      nz = dim(1); ny = dim(2); nx = dim(3);
+      
+      if strcmp(plane, 'enface')
+        %% handle en-face plane
+        if index > ny
+          error(['Cannot get slice ', num2str(index), ', maximum is ', num2str(ny)]);
+        end
+        
+        slice = zeros(nz,nx, type);
+        for z = 1:nz
+          slice(z,:) = squeeze(oct.bScans{z}.image(index,:));
+        end
+        
+      elseif strcmp(plane, 'outofplane')
+        %% handle out-of-plane
+        if index > nx
+          error(['Cannot get slice ', num2str(index), ', maximum is ', num2str(nx)]);
+        end
+        
+        slice = zeros(ny,nz, type);
+        for z = 1:nz
+          slice(:,z) = squeeze(oct.bScans{z}.image(:,index));
+        end
+      
+      else
+        %% handle in-plane
+        if ~strcmp(plane, 'inplane')
+          warning(['Cannot handle plane type ', plane, ', reverting to inplane']);
+        end
+        
+        if index > ny
+          error(['Cannot get slice ', num2str(index), ', maximum is ', num2str(ny)]);
+        end
+        
+        slice = zeros(ny,nx, type);
+        slice(:,:) = squeeze(oct.bScans{index}.image);
       end
     end
     

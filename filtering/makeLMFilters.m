@@ -5,8 +5,12 @@ function F=makeLMFilters(support)
 % Fourier transform.
 
 %   SUP=49;                 % Support of the largest filter (must be odd)
+if nargin > 0
   SUP=support;                 % Support of the largest filter (must be odd)
-%   SUP=35;                 % Support of the largest filter (must be odd)
+else
+  SUP = 29;
+end
+  %   SUP=35;                 % Support of the largest filter (must be odd)
 %   SCALEX=sqrt(2).^[1:3];  % Sigma_{x} for the oriented filters
   SCALEX=sqrt(2).^[1,3];  % Sigma_{x} for the oriented filters
   NORIENT=6;              % Number of orientations

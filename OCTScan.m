@@ -46,7 +46,7 @@ classdef OCTScan
     
     function spacing = getSpacing(oct)
       spacingBscan = oct.bScans{1}.spacing;
-      spacing = [oct.oopSpacing, spacingBscan(1), spacingBscan(2)]
+      spacing = [oct.oopSpacing, spacingBscan(1), spacingBscan(2)];
     end
     
     

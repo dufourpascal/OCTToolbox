@@ -1,28 +1,66 @@
-function [ octRaw ] = rawVolumeFromGIPL( path, type )
+function [ octRaw ] = rawVolumeFromGIPL( path, type, labelIds, labelColorsRGB )
 %load a raw oct or segmentation from a gipl file.
+%
 %   Use the full path to a .gipl file.
-%   type can be 'double' (preferred for oct) or 'uint8' (preferred for segmentations)
+%   type can be 'double' (preferred for oct)
+%   or 'uint8' (preferred for segmentations).
+%   The output raw volume has format [sz, sy, sx]
+%
+%   A segmentation can also be directly converted to RGB or RGBA format.
+%   In that case set the type to 'rgb' or 'rgba' and specify the labelIds
+%   (of size [nLabels 1], mapping the values in the gipl file to label ids)
+%   and labelColors (of size [nLabels, 3], mapping the label ids to RGB
+%   colors. The resulting 4d volume will then be of type double.
 
-if ~strcmp(type, 'double') && ~strcmp(type, 'uint8')
-  warning(['trying to create type ', type, ', but only double or uint8 are supported']);
-end
+%% make sure the arguments are in the correct format
+validatestring(type,{'double','uint8','rgb','rgba'},'rawVolumeFromGIPL','type',2);
 
-octGipl = gipl_read_volume(path);
-
-[sx, sy, sz] = size(octGipl)
-octRaw = zeros(sz,sy,sx, type);
-
-for z = 1:sz
-  if strcmp(type, 'double')
-    octRaw(z,:,:) = double(squeeze(octGipl(:,:,z))') ./ 255;
-  elseif strcmp(type, 'uint8')
-    octRaw(z,:,:) = uint8(squeeze(octGipl(:,:,z))');
-  else
-    octRaw(z,:,:) = squeeze(octGipl(:,:,z))';
-    warning(['handling bscan with type ', type]);
+if strcmp(type, 'rgb') || strcmp(type, 'rgba')
+  if nargin < 4
+    error(['Cannot create raw volume of type ', type, ' without labelIds and labelColors argument']);
+  end
+  if size(labelIds,1) ~= size(labelColorsRGB,1)
+    error(['Size mismatch between labelIds (', num2str(size(labelIds,1)), ...
+      ') and labelColors (', num2str(size(labelColorsRGB,1)), ').']);
   end
 end
 
+%% read the gipl file and put into correct order
+octGipl = gipl_read_volume(path);
+octGipl = permute(octGipl,[3 2 1]);
+[sz, sy, sx] = size(octGipl);
+
+%% convert to requested format 
+switch type
+  case 'double'
+    octRaw = double(octGipl);
+  case 'uint8'
+    octRaw = uint8(octGipl);
+  case {'rgb','rgba'}
+    %% map label indices to RGB colors
+    octR = zeros(sz,sy,sx, 'double');
+    octG = zeros(sz,sy,sx, 'double');
+    octB = zeros(sz,sy,sx, 'double');
+    
+    nLabels = size(labelIds,1);
+    for l = 1:nLabels
+      indLabels = find(octGipl == labelIds(l));
+      octR(indLabels) = labelColorsRGB(l,1);
+      octG(indLabels) = labelColorsRGB(l,2);
+      octB(indLabels) = labelColorsRGB(l,3);
+    end
+    
+    if strcmp(type,'rgb');
+      octRaw = zeros(sz,sy,sx,3);
+    elseif strcmp(type,'rgba');
+      octRaw = zeros(sz,sy,sx,4);
+      octRaw(:,:,:,4) = 0.5;
+    end
+    
+    octRaw(:,:,:,1) = octR(:,:,:);
+    octRaw(:,:,:,2) = octG(:,:,:);
+    octRaw(:,:,:,3) = octB(:,:,:);
+    
 end
 
-
+end

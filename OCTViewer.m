@@ -9,8 +9,10 @@ classdef OCTViewer < handle
     Slider
     PlaneSelectionGroup
     oct
+    segVolume
     currentSlice
     currentPlane
+    SliderSegAlpha
   end
   
   methods
@@ -46,6 +48,15 @@ classdef OCTViewer < handle
       
       lh = addlistener(obj.Slider, 'ContinuousValueChange', @obj.onSlide);
       setappdata(obj.Slider,'sliderListener',lh);
+      
+      obj.SliderSegAlpha = uicontrol(obj.ParentPanel, 'Style', 'slider', ...
+        'Enable', 'on', 'SliderStep', [1 0.01], ...
+        'Units', 'pixels', ...
+        'pos', [160 100 300 15], ...
+        'Max', 1, 'Min', 0, 'Value', 1);
+      lhsa = addlistener(obj.SliderSegAlpha, 'ContinuousValueChange', @obj.onSlideAlpha);
+      setappdata(obj.SliderSegAlpha,'sliderListener',lhsa);
+      
       obj.currentPlane = 'inplane';
       
       if nargin > 1
@@ -81,6 +92,16 @@ classdef OCTViewer < handle
         set(obj.Slider, 'Max', octDim(1), 'Min', 1, 'Enable', 'off');
       end
       obj.setSlice(1, 'inplane')
+    end
+    
+    
+    function setSegmentation(obj, segVolumeRGBA)
+      %set a raw volume as the segmentation of the corresponding oct
+      %   the segmentation volume has to be a 4 dimensional matrix
+      %   of the format [sz,sy,sx, RGBA], double type.
+      
+      obj.segVolume = segVolumeRGBA;
+      obj.setSlice(obj.currentSlice, obj.currentPlane);
     end
     
     
@@ -128,7 +149,31 @@ classdef OCTViewer < handle
       imgDim = size(rawSlice);
       aspectXY = viewerSpacingX/viewerSpacingY;
       
+      
       imagesc([1 imgDim(2)], [1 imgDim(1)*aspectXY], rawSlice, 'Parent', obj.Axis)
+      
+      %% set segmentation
+      if ~isempty(obj.segVolume)
+        %get raw slice of segmentation
+        switch plane
+          case 'inplane'
+            rawSegSlice = squeeze(obj.segVolume(sliceIndex,:,:,:));
+          case 'outofplane'
+            rawSegSlice = squeeze(obj.segVolume(:,:,sliceIndex,:));
+            rawSegSlice = permute(rawSegSlice, [2 1 3]);
+          case 'enface'
+            rawSegSlice = squeeze(obj.segVolume(:,sliceIndex,:,:));
+          otherwise
+            error(['Cannot handle plane ', plane, '.']);
+        end
+        
+        %display overlay
+        hold(obj.Axis, 'on');
+        imgH = imagesc([1 imgDim(2)], [1 imgDim(1)*aspectXY], rawSegSlice(:,:,1:3), 'Parent', obj.Axis);
+        set(imgH, 'AlphaData', rawSegSlice(:,:,4));
+        hold(obj.Axis, 'off');
+%         hold off;
+      end
       
       axis(obj.Axis, 'off');
       set(obj.TestLabel, 'String', ['Slice: ', num2str(sliceIndex)]);
@@ -229,9 +274,16 @@ classdef OCTViewer < handle
         plane = strrep(get(radItem,'String'), '-', '');
         hObject.setSlice(sliderVal, plane);
       end
-      
     end
     
+    function onSlideAlpha(hObject, eventdata, handles)
+      if isempty(hObject.segVolume)
+        return; %no segmentation, so ignore
+      end
+      alpha = get(eventdata, 'Value');
+      hObject.segVolume(:,:,:,4) = alpha;
+      hObject.setSlice(hObject.currentSlice, hObject.currentPlane);
+    end
     
     function onPlaneChange(hObject, eventdata, handles)
       planeMethod = get(get(eventdata,'SelectedObject'),'String');

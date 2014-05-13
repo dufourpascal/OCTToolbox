@@ -124,7 +124,6 @@ classdef OCTScan
       end
     end
     
-    
   end
   
 end

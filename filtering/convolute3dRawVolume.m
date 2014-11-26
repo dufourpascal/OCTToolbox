@@ -15,12 +15,14 @@ if ~isa(rawVolume, 'double')
   warning(['Filtering raw volume of type ', class(rawVolume), ', but expecting type double']);
 end
 
+fprintf('filtering 3d volume');
+
 convVolumes = zeros([fn, iz,iy,ix], 'double');
 
 for b = 1:iz
+  fprintf('.');
   img2d = squeeze(rawVolume(b,:,:));
   convImgs = convolute2dImage(img2d,filterbank);
   convVolumes(:,b,:,:) = convImgs;
-  
 end
 

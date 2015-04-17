@@ -19,11 +19,11 @@ for z = 1:sz
     if dBMY == 0
       flattenedVol(z, :,x) = rawVol(z, :, x);
     elseif dBMY < 0 %shift up
-      flattenedVol(z, 1:-dBMY,x) = 0;
+      flattenedVol(z, 1:-dBMY,x) = mean(rawVol(z,1:8,x));
       flattenedVol(z, -dBMY+1:end,x) = rawVol(z, 1:end+dBMY, x);
     else % shift down
       flattenedVol(z, 1:end-dBMY+1, x) = rawVol(z, dBMY:end, x);
-      flattenedVol(z, end-dBMY+1:end, x) = 0;
+      flattenedVol(z, end-dBMY+1:end, x) = mean(rawVol(z,end-8:end,x));
     end
       %         sumPixels = sum(rawVol(b,1:yRange, a));
       %         tmpVol(b, yRange/2,a) = sumPixels;

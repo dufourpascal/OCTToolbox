@@ -67,6 +67,8 @@ while ~rawDataStart
   end
 end
 
+%% lagerality
+
 %% read raw data
 sizeA = dimX*dimY*dimZ;
 rawSingleDim = fread(fid, sizeA, pixelTransform);  
